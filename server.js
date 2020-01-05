@@ -2,7 +2,7 @@ const port = 3000;
 
 var express = require('express');
 var app = express();
-const http = require('http').Server(app);
+const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 
 app.use('/public', express.static(process.cwd() + '/public'));
@@ -14,9 +14,12 @@ app.route('/')
     res.sendFile(process.cwd() + '/index.html');
   });
 
-  io.on('connection', socket => {
-    console.log('A user has connected');
-  });
+io.on('connection', function (socket) {
+    console.log('a user connected');
+    socket.on('disconnect', function () {
+        console.log('user disconnected');
+    });
+});
   
 //404 Not Found Middleware
 app.use(function(req, res, next) {
@@ -26,7 +29,7 @@ app.use(function(req, res, next) {
   });
 
   //Start our server and tests!
-app.listen(port , function () {
+http.listen(port , function () {
     console.log("Listening on port " + port);
     // if(process.env.NODE_ENV==='test') {
     //   console.log('Running Tests...');
