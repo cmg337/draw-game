@@ -13,7 +13,7 @@
             Draw Game
         </h1>
     </header>
-    <canvas id="canvas" width=1000 height=700>
+    <canvas id="canvas" draggable="false"  width=1000 height=700>
     </canvas>
 
     <style>
@@ -29,76 +29,159 @@
     <script>
         $(function () {
             var socket = io();
-            var canvas = document.getElementById('canvas');                         
+            var canvas = document.getElementById('canvas');
             var context = canvas.getContext('2d');
-            var mouseIsDown = false;
-            //create rect in canvas to draw on
+
             var width = canvas.width;
             var height = canvas.height;
-            context.fillStyle = "white";
-            context.fillRect(0, 0, width, height);
-            console.log(canvas);
 
-            function sleep(ms) {
-              return new Promise(resolve => setTimeout(resolve, ms));
-            }
+            //context.fillStyle = "white";
+            //context.fillRect(0, 0, width, height);
 
-            var mouse = {
-                x: 0,
-                y: 0
-            };
-            var element = null;
+            context.fillStyle = "solid";
+            context.strokeStyle = "red";
+            context.lineWidth = 5;
+            context.lineCap = "round";
 
-            function setMousePosition(e) {
-                var ev = e || window.event; //Moz || IE
-                if (ev.pageX) { //Moz
-                    mouse.x = ev.pageX + window.pageXOffset - canvas.offsetLeft;
-                    mouse.y = ev.pageY + window.pageYOffset - canvas.offsetTop;
-                } else if (ev.clientX) { //IE
-                    mouse.x = ev.clientX + document.body.scrollLeft - canvas.offsetLeft;
-                    mouse.y = ev.clientY + document.body.scrollTop - canvas.offsetTop;
+            var draw = (x, y, type) => {
+                if (type == "mousedown") {
+                    context.beginPath();
+                    context.moveTo(x, y)
                 }
+                else if (type == "mousemove") {
+                    context.lineTo(x, y);
+                    context.stroke();
+                }
+                else {
+                    context.closePath();
+                }
+                
+                return;
             }
 
-            canvas.onmousemove = function (e) {
-                setMousePosition(e);
-                //if (element !== null) {
-                //    element.style.width = Math.abs(mouse.x - mouse.startX) + 'px';
-                //    element.style.height = Math.abs(mouse.y - mouse.startY) + 'px';
-                //    element.style.left = (mouse.x - mouse.startX < 0) ? mouse.x + 'px' : mouse.startX + 'px';
-                //    element.style.top = (mouse.y - mouse.startY < 0) ? mouse.y + 'px' : mouse.startY + 'px';
-                //}
+            var drawLine = function (ev) {
+                var type = ev.type;
+                var x = ev.offsetX;
+                var y = ev.offsetY;
+                
+                //console.log(x + ", " + y)
+                //console.log(ev)
+                draw(x, y, type);
+                socket.emit("sendDrawing", { x: x, y: y, type: type });
             }
 
-            canvas.onmousedown = async function (e) {
-                console.log("begun.");
-                mouseIsDown = true;
-                var imgd;
-                var thickness = 10;
-                while (mouseIsDown) {
-                    imgd = context.getImageData(mouse.x - thickness/2, mouse.y - thickness/2,  thickness, thickness);
+            $(canvas).on("mousedown", (ev) => {
+                drawLine(ev.originalEvent);
+                $(canvas).on("mousemove", (ev2) => drawLine(ev2.originalEvent));
+                return
+            })
+
+            $(canvas).on("mouseup mouseleave", ev => {
+                $(canvas).unbind("mousemove");
+                setTimeout(
+                    () => drawLine(ev.originalEvent)
+                    , 10);
+                return 
+            })
+
+            socket.on("receiveDrawing", function (data) {
+                console.log("received drawing")
+                draw(data.x, data.y, data.type);
+            })
+            
+
+            //var mouseIsDown = false;
+            ////create rect in canvas to draw on
+            //var width = canvas.width;
+            //var height = canvas.height;
+            //context.fillStyle = "white";
+            //context.fillRect(0, 0, width, height);
+            //console.log(canvas);
+
+            //function sleep(ms) {
+            //  return new Promise(resolve => setTimeout(resolve, ms));
+            //}
+
+            //var mouse = {
+            //    x: 0,
+            //    y: 0
+            //};
+
+            ////draw received from server
+            //socket.on('drawing', function (data) {
+            //    console.log('receiving drawing')
+            //    //console.log(imageData);
+            //    //var image = new Image();
+            //    //image.src = imgd;
+            //    //context.drawImage(image, context.x, context.y);
+            //    var idata = context.createImageData(data.width, data.width);
+            //    //context.putImageData(data.imgd, canvas.offsetLeft + data.x, canvas.offsetHeight + data.y);  
+            //    for (var i = 0; i < idata.data.length; i++) idata.data[i] = data.data[i];
+            //    context.putImageData(idata,data.x + canvas.offsetLeft, data.y + canvas.offsetHeight);
+            //})
+
+            //function setMousePosition(e) {
+            //    var ev = e || window.event; //Moz || IE
+            //    if (ev.pageX) { //Moz
+            //        mouse.x = ev.pageX + window.pageXOffset - canvas.offsetLeft;
+            //        mouse.y = ev.pageY + window.pageYOffset - canvas.offsetTop;
+            //    } else if (ev.clientX) { //IE
+            //        mouse.x = ev.clientX + document.body.scrollLeft - canvas.offsetLeft;
+            //        mouse.y = ev.clientY + document.body.scrollTop - canvas.offsetTop;
+            //    }
+            //}
+
+            //canvas.onmousemove = function (e) {
+            //    setMousePosition(e);
+            //    //if (element !== null) {
+            //    //    element.style.width = Math.abs(mouse.x - mouse.startX) + 'px';
+            //    //    element.style.height = Math.abs(mouse.y - mouse.startY) + 'px';
+            //    //    element.style.left = (mouse.x - mouse.startX < 0) ? mouse.x + 'px' : mouse.startX + 'px';
+            //    //    element.style.top = (mouse.y - mouse.startY < 0) ? mouse.y + 'px' : mouse.startY + 'px';
+            //    //}
+            //}
+
+            //canvas.onmousedown = async function (e) {
+            //    console.log("begun.");
+            //    mouseIsDown = true;
+            //    var imageDataToSend = [];
+            //    var imgd;
+            //    var thickness = 10;
+            //    while (mouseIsDown) {
+            //        let x = mouse.x - thickness / 2;
+            //        let y = mouse.y - thickness / 2;
+            //        imgd = context.getImageData(x, y, thickness, thickness);
                      
-                    // Loop over each pixel and invert the color.
-                    for (var i = 0, n = imgd.data.length; i < n; i += 4) {
-	                    imgd.data[i  ] = 0; // red
-	                    imgd.data[i+1] = 0; // green
-	                    imgd.data[i+2] = 255; // blue
-	                    // i+3 is alpha (the fourth element)
-                    }
+            //        // Loop over each pixel and invert the color.
+            //        for (var i = 0, n = imgd.data.length; i < n; i += 4) {
+	           //         imgd.data[i  ] = 0; // red
+	           //         imgd.data[i+1] = 0; // green
+	           //         imgd.data[i+2] = 255; // blue
+	           //         // i+3 is alpha (the fourth element)
+            //            imageDataToSend.push(imgd.data)
+            //        }
 
-                    // Draw the ImageData at the given (x,y) coordinates.
-                    context.putImageData(imgd, mouse.x - thickness/2, mouse.y - thickness/2);
-                    await sleep();
-                }
-            }
-            canvas.onmouseup = function (e) {
-                console.log('end')
-                mouseIsDown = false;
-            }
-            canvas.onmouseleave = function (e) {
-                console.log('end')
-                mouseIsDown = false;
-            }
+            //        // Draw the ImageData at the given (x,y) coordinates.
+            //        context.putImageData(imgd, x, y);      
+            //        socket.emit('draw', { imgd: imgd, x: x - canvas.offsetLeft, y: y - canvas.offsetHeight, width: thickness });
+            //        await sleep();
+            //    }   
+
+                //send drawing to server
+                //socket.emit('draw', imageDataToSend);
+                //imgd = context.getImageData(canvas.offsetLeft, canvas.offsetHeight, canvas.width, canvas.height);
+                //imageUrl = canvas.toDataURL();
+                //socket.emit('draw', imageUrl);
+            //}
+
+            //canvas.onmouseup = function (e) {
+            //    console.log('end')
+            //    mouseIsDown = false;
+            //}
+            //canvas.onmouseleave = function (e) {
+            //    console.log('end')
+            //    mouseIsDown = false;
+            //}
 
         });
     </script>
