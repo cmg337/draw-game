@@ -5,20 +5,35 @@ var app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 
+const bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded());
+
 app.use('/public', express.static(process.cwd() + '/public'));
+
+var lobbies = {}
 
 
 //Index page (static HTML)
 app.route('/')
-  .get(function (req, res) {
+    .get(function (req, res) {
     res.sendFile(process.cwd() + '/index.html');
-  });
+    })
+    .post(function (req, res) {
+        console.log(req.body)
+        res.redirect('/lobby/' + req.body.lobbyname);
+    })
+
+app.route('/lobby/:lobbyId')
+    .get(function (req, res) {
+        res.sendFile(process.cwd() + '/lobby.html');
+    })
+    
 
 io.on('connection', function (socket) {
     console.log('a user connected');
     socket.on('sendDrawing', function (data) {
         console.log('sending drawing');
-        io.emit('receiveDrawing', data);
+        io.emit(data.lobbyName, data);
     })
 
     socket.on('disconnect', function () {

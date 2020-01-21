@@ -5,46 +5,27 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    
+
 </head>
 <body>
-    <header>
-        <h1>
-            Draw Game
-        </h1>
-    </header>
-    <div id="canvas-container">
-        <canvas id="canvas" draggable="false" width=1000 height=700></canvas>
-    </div>
-    <div id="color-picker">
-        <button id="red" class="color activeColor">red</button>
-        <button id="blue" class="color">blue</button>
-    </div>
+    <div id="container">
+        <header>
+            <h1>
+                Draw Game
+            </h1>
+        </header>
+        <form id="lobbyform" method="post">
+            <label>Lobby Name: </label>
+            <br />
+            <input id="lobbyname" />
+            <button id="submit">Go to Lobby</button>
+        </form>
 
-    <div id="size-picker">
-        <button id="2" class="size activeSize">2</button>
-        <button id="6" class="size">6</button>
     </div>
-
 
     <style>
-        #canvas-container {
-            width: 100%;
-            text-align: center;
-        }
-
-        #canvas {
-            border: 2px solid blue;
-            display: inline;
-        }
-
-        .activeColor {
-            border: solid 1px black;
-            outline: 0;
-        }
-        .activeSize {
-            border: solid 1px black;
-            outline: 0;
+        body {
+            background-color: rgb(113, 113, 113);
         }
 
         header {
@@ -54,88 +35,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.2/socket.io.min.js"></script>
     <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
     <script>
-        $(function () {
-            var socket = io();
-            var canvas = document.getElementById('canvas');
-            var context = canvas.getContext('2d');
-
-            var width = canvas.width;
-            var height = canvas.height;
-
-
-            context.fillStyle = "solid";
-            context.lineCap = "round";
-
-            var draw = (x, y, type, color, size) => {
-                context.strokeStyle = color;
-                context.lineWidth = size;
-                if (type == "mousedown") {
-                    context.beginPath();
-                    context.moveTo(x, y)
-                }
-                else if (type == "mousemove") {
-                    context.lineTo(x, y);
-                    context.stroke();
-                }
-                else {
-                    context.closePath();
-                }
-
-                return;
-            }
-
-            var drawLine = function (ev) {
-                var type = ev.type;
-                var x = ev.offsetX;
-                var y = ev.offsetY;
-                var color = $('.activeColor').prop('id');
-                var size = parseInt($('.activeSize').prop('id'));
-
-                //draw and send
-                draw(x, y, type, color);
-                socket.emit("sendDrawing", { x: x, y: y, type: type, color: color, size: size });
-            }
-
-            //start drawing on mouse down
-            $(canvas).on("mousedown", (ev) => {
-                drawLine(ev.originalEvent);
-                $(canvas).on("mousemove", (ev2) => drawLine(ev2.originalEvent));
-                return
-            })
-
-
-            //end drawing on mouseup
-            $(canvas).on("mouseup mouseleave", ev => {
-                $(canvas).unbind("mousemove");
-                setTimeout(
-                    () => drawLine(ev.originalEvent)
-                    , 10);
-                return
-            })
-
-            //draw when server sends drawing
-            socket.on("receiveDrawing", function (data) {
-                console.log("received drawing")
-                draw(data.x, data.y, data.type, data.color, data.size);
-            })
-
-            //handle color options
-            $('.color').on('click', (el) => {
-                $('.activeColor').removeClass('activeColor');
-                $(el.target).addClass('activeColor');
-            })
-
-            //handle size options - same way as color
-            $('.size').on('click', (el) => {
-                $('.activeSize').removeClass('activeSize');
-                $(el.target).addClass('activeSize');
-            })
-
-
-
-
-        });
+        //$('#lobbyform').submit((event) => {
+        //    console.log(event);
+        //    event.preventDefault();
+        //}
+        //)
     </script>
-</body>
-</html>
 
+</body>
+
+</html>

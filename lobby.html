@@ -1,0 +1,208 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Draw Game</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+</head>
+<body>
+    <div id="container">
+        <header>
+            <h1 class="unselectable">
+                Draw Game
+            </h1>
+        </header>
+        <div id="canvas-container">
+            <canvas id="canvas" draggable="false" width=1000 height=700></canvas>
+        </div>
+        <div id="options">
+            <div id="color-picker" class="picker">
+            </div>
+
+            <div id="size-picker" class="picker">
+            </div>
+        </div>
+    </div>
+
+
+    <style>
+        /*https://stackoverflow.com/questions/69430/is-there-a-way-to-make-text-unselectable-on-an-html-page*/
+        *.unselectable {
+           -moz-user-select: -moz-none;
+           -khtml-user-select: none;
+           -webkit-user-select: none;
+
+           /*
+             Introduced in IE 10.
+             See http://ie.microsoft.com/testdrive/HTML5/msUserSelect/
+           */
+           -ms-user-select: none;
+           user-select: none;
+        }
+
+        body{
+            background-color: rgb(113, 113, 113);
+        }
+        #canvas-container {
+            width: 100%;
+            text-align: center;
+        }
+
+        #canvas {
+            border: 2px solid blue;
+            display: inline;
+            background-color: white;
+        }
+        .picker{
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+        }
+        .activeColor {
+            outline: solid 2px yellow;
+        }
+        .holder{
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .color{
+            height: 15px;
+            width: 15px;
+        }
+        .activeSize {
+            outline: solid 2px yellow;
+        }
+        button{
+            border-radius: 50%;
+            border: 1px solid gray;
+            font-size: 0px;
+            padding: 0px;
+        }
+        #options{
+            text-align: center;
+        }
+
+        header {
+            text-align: center;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.2/socket.io.min.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script>
+        $(function () {
+            //create color buttons
+            var colors = ['#2702f7', '#8002f7', '#d602f7', '#f70212', '#f77402', '#f7e202', '#06c400', '#02f9f9', '#000000', '#ffffff'];
+            colors.forEach(color => {
+                $('#color-picker').append('<div class="color-holder holder"><button id="' + color + '" class="color" style="background-color:' + color + '" ></button></div>');
+            });
+
+            //create size buttons
+            var sizes = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+            sizes.forEach(size => {
+                $('#size-picker').append('<div class="size-holder holder"><button id="' + size + '" class="size" style="background-color:black; width:' + (size < 5 ? 6 : size) + 'px; height:' + size + 'px;" ></button></div>');
+            });
+
+
+
+
+
+
+            var socket = io();
+            var canvas = document.getElementById('canvas');
+            var context = canvas.getContext('2d');
+            var lobbyID = window.location.pathname.split('/')[2];
+
+            var width = canvas.width;
+            var height = canvas.height;
+            var drawingCurrently = false;
+
+
+            context.fillStyle = "solid";
+            context.lineCap = "round";
+
+            var draw = (x, y, type, color, size) => {
+                context.strokeStyle = color;
+                context.lineWidth = size;
+                if (type == "mousedown") {
+                    context.beginPath();
+                    context.moveTo(x, y);
+                    context.lineTo(x, y);
+                    context.stroke();
+                }
+                else if (type == "mousemove") {
+                    context.lineTo(x, y);
+                    context.stroke();
+                }
+                else {
+                    context.closePath();
+                }
+
+                return;
+            }
+
+            var drawLine = function (ev) {
+                var type = ev.type;
+                var x = ev.offsetX;
+                var y = ev.offsetY;
+                var color = $('.activeColor').prop('id');
+                var size = parseInt($('.activeSize').prop('id'));
+
+                //draw and send
+                //draw(x, y, type, color);
+                socket.emit('sendDrawing', { x: x, y: y, type: type, color: color, size: size, lobbyName: lobbyID });
+            }
+
+            //start drawing on mouse down
+            $(canvas).on("mousedown", (ev) => {
+                if (!drawingCurrently) {
+                    drawingCurrently = true;
+                }
+                drawLine(ev.originalEvent);
+                $(canvas).on("mousemove", (ev2) => drawLine(ev2.originalEvent));
+                return
+            })
+
+
+            //end drawing on mouseup
+            $('body').on("mouseup", ev => {
+                $(canvas).unbind("mousemove");
+                if (drawingCurrently) {
+                    drawLine(ev.originalEvent);
+                    drawingCurrently = false;
+                }
+                
+                return
+            })
+
+
+            //draw when server sends drawing
+            socket.on(lobbyID, function (data) {
+                draw(data.x, data.y, data.type, data.color, data.size);
+            })
+
+            //handle color options
+            $('.color').on('click', (el) => {
+                $('.activeColor').removeClass('activeColor');
+                $(el.target).addClass('activeColor');
+                $('.size').css('background-color', $('.activeColor').prop('id'));
+            })
+
+            //handle size options - same way as color
+            $('.size').on('click', (el) => {
+                $('.activeSize').removeClass('activeSize');
+                $(el.target).addClass('activeSize');
+            })
+
+
+
+
+        });
+    </script>
+</body>
+</html>
+
