@@ -19,7 +19,6 @@ app.route('/')
     res.sendFile(process.cwd() + '/index.html');
     })
     .post(function (req, res) {
-        console.log(req.body)
         res.redirect('/lobby/' + req.body.lobbyname);
     })
 
@@ -32,7 +31,6 @@ app.route('/lobby/:lobbyId')
 io.on('connection', function (socket) {
     console.log('a user connected');
     socket.on('sendDrawing', function (data) {
-        console.log('sending drawing');
         io.emit(data.lobbyName, data);
     })
 

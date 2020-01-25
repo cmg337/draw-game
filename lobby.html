@@ -23,6 +23,10 @@
 
             <div id="size-picker" class="picker">
             </div>
+
+            <div id="opacity-picker" class="picker">
+                <label>Opacity: </label><input type="range" min="1" max="100" value="50" class="slider" id="opacity">
+            </div>
         </div>
     </div>
 
@@ -90,6 +94,48 @@
         header {
             text-align: center;
         }
+        #opacity-picker{
+            display: flex;
+            align-items: center;
+        }
+
+        /**** https://www.w3schools.com/howto/howto_js_rangeslider.asp ****/
+
+         /* The slider itself */
+        .slider {
+          -webkit-appearance: none;  /* Override default CSS styles */
+          appearance: none;
+          width: 200px; /* Full-width */
+          height: 20px; /* Specified height */
+          background: #d3d3d3; /* Grey background */
+          outline: none; /* Remove outline */
+          opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+          -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+          transition: opacity .2s;
+        }
+
+        /* Mouse-over effects */
+        .slider:hover {
+          opacity: 1; /* Fully shown on mouse-over */
+        }
+
+        /* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
+        .slider::-webkit-slider-thumb {
+          -webkit-appearance: none; /* Override default look */
+          appearance: none;
+          width: 20px; /* Set a specific slider handle width */
+          height: 20px; /* Slider handle height */
+          background: #4CAF50; /* Green background */
+          cursor: pointer; /* Cursor on hover */
+        }
+
+        .slider::-moz-range-thumb {
+          width: 20px; /* Set a specific slider handle width */
+          height: 20px; /* Slider handle height */
+          background: #4CAF50; /* Green background */
+          cursor: pointer; /* Cursor on hover */
+        }
+
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.2/socket.io.min.js"></script>
     <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
@@ -124,15 +170,19 @@
 
             context.fillStyle = "solid";
             context.lineCap = "round";
+            context.miterLimit = 1;
+            context.lineJoin = "round";
+            //context.imageSmoothingEnabled = false;
 
-            var draw = (x, y, type, color, size) => {
+            var draw = (x, y, type, color, size, opacity) => {
                 context.strokeStyle = color;
                 context.lineWidth = size;
-                if (type == "mousedown") {
+                context.globalAlpha = opacity ;
+                if (type == "mousedown") {  
                     context.beginPath();
                     context.moveTo(x, y);
                     context.lineTo(x, y);
-                    context.stroke();
+                    context.stroke();    
                 }
                 else if (type == "mousemove") {
                     context.lineTo(x, y);
@@ -143,7 +193,7 @@
                 }
 
                 return;
-            }
+            } 
 
             var drawLine = function (ev) {
                 var type = ev.type;
@@ -151,10 +201,11 @@
                 var y = ev.offsetY;
                 var color = $('.activeColor').prop('id');
                 var size = parseInt($('.activeSize').prop('id'));
+                var opacity = $('#opacity').prop('value') / 100;
 
                 //draw and send
                 //draw(x, y, type, color);
-                socket.emit('sendDrawing', { x: x, y: y, type: type, color: color, size: size, lobbyName: lobbyID });
+                socket.emit('sendDrawing', { x: x, y: y, type: type, color: color, size: size, opacity: opacity, lobbyName: lobbyID });
             }
 
             //start drawing on mouse down
@@ -182,7 +233,7 @@
 
             //draw when server sends drawing
             socket.on(lobbyID, function (data) {
-                draw(data.x, data.y, data.type, data.color, data.size);
+                draw(data.x, data.y, data.type, data.color, data.size, data.opacity);
             })
 
             //handle color options

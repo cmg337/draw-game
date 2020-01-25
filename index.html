@@ -17,7 +17,7 @@
         <form id="lobbyform" method="post">
             <label>Lobby Name: </label>
             <br />
-            <input id="lobbyname" />
+            <input id="lobbyname" name="lobbyname" />
             <button id="submit">Go to Lobby</button>
         </form>
 
@@ -35,11 +35,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.2/socket.io.min.js"></script>
     <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
     <script>
-        //$('#lobbyform').submit((event) => {
-        //    console.log(event);
-        //    event.preventDefault();
-        //}
-        //)
+        $('#lobbyform').submit((event) => {
+            if ($('#lobbyname').val() == '') {
+                event.preventDefault();
+                alert('Must enter lobby name!');
+            }
+        }
+        )
     </script>
 
 </body>
