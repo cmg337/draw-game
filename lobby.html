@@ -25,7 +25,11 @@
             </div>
 
             <div id="opacity-picker" class="picker">
-                <label>Opacity: </label><input type="range" min="1" max="100" value="50" class="slider" id="opacity">
+                <label class="unselectable">Opacity: </label><input type="range" min="1" max="100" value="50" class="slider" id="opacity">
+            </div>
+
+            <div id="button-holder" class="picker">
+                <button id="clearBtn" class="btn unselectable">Clear Drawing</button>
             </div>
         </div>
     </div>
@@ -74,6 +78,9 @@
             align-items: center;
             justify-content: center;
         }
+        #button-holder{
+            margin-top: 5px;
+        }
         .color{
             height: 15px;
             width: 15px;
@@ -81,7 +88,7 @@
         .activeSize {
             outline: solid 2px yellow;
         }
-        button{
+        .option-btn{
             border-radius: 50%;
             border: 1px solid gray;
             font-size: 0px;
@@ -142,16 +149,20 @@
     <script>
         $(function () {
             //create color buttons
-            var colors = ['#2702f7', '#8002f7', '#d602f7', '#f70212', '#f77402', '#f7e202', '#06c400', '#02f9f9', '#000000', '#ffffff'];
+            var colors = ['2702f7', '8002f7', 'd602f7', 'f70212', 'f77402', 'f7e202', '06c400', '02f9f9', '000000', 'ffffff'];
             colors.forEach(color => {
-                $('#color-picker').append('<div class="color-holder holder"><button id="' + color + '" class="color" style="background-color:' + color + '" ></button></div>');
+                $('#color-picker').append('<div class="color-holder holder"><button id="' + color + '" class="color option-btn" style="background-color:#' + color + '" ></button></div>');
             });
 
             //create size buttons
             var sizes = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
             sizes.forEach(size => {
-                $('#size-picker').append('<div class="size-holder holder"><button id="' + size + '" class="size" style="background-color:black; width:' + (size < 5 ? 6 : size) + 'px; height:' + size + 'px;" ></button></div>');
+                $('#size-picker').append('<div class="size-holder holder"><button id="' + size + '" class="size option-btn" style="background-color:black; width:' + (size < 5 ? 6 : size) + 'px; height:' + size + 'px;" ></button></div>');
             });
+
+            //set default values to active
+            $("#000000").addClass('activeColor');
+            $("#2").addClass('activeSize');
 
 
 
@@ -199,12 +210,11 @@
                 var type = ev.type;
                 var x = ev.offsetX;
                 var y = ev.offsetY;
-                var color = $('.activeColor').prop('id');
+                var color = '#' + $('.activeColor').prop('id');
                 var size = parseInt($('.activeSize').prop('id'));
                 var opacity = $('#opacity').prop('value') / 100;
 
-                //draw and send
-                //draw(x, y, type, color);
+                //send drawing to server
                 socket.emit('sendDrawing', { x: x, y: y, type: type, color: color, size: size, opacity: opacity, lobbyName: lobbyID });
             }
 
@@ -250,6 +260,12 @@
             })
 
 
+            //clear drawing when clear button pressed
+            $("#clearBtn").on('click', (el) => {
+                context.fillStyle = 'white';
+                context.globalAlpha = 1;
+                context.fillRect(0, 0, canvas.width, canvas.height);
+            })
 
 
         });
